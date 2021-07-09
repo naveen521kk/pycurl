@@ -6,6 +6,11 @@ on:
 jobs:
   test:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.6.8, 3.7.9, 3.8.10]
+        bitness: [32,64]
     env:
       NASM_VERSION: 2.15.05
       GMAKE_VERSION: 3.81
@@ -16,7 +21,7 @@ jobs:
       - name: Setup Python 3.8
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.8 # to run script
 
       - name: Install Nasm
         shell: pwsh
@@ -35,8 +40,21 @@ jobs:
 
       - name: Download
         run: |
-          python winbuild.py download
-      
+          python winbuild.py downloadpy -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
       - name: Build Dependencies
         run: |
-          python winbuild.py builddeps
+          python winbuild.py builddeps -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - name: Assemble Deps
+        run: |
+          python winbuild.py assembledeps -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: deps
+          path: deps/*
+
+      - name: Build Wheels
+        run: |
+          python winbuild.py -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}

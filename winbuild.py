@@ -342,7 +342,7 @@ def buildconfigs():
     ]
 
 if len(args) > 0:
-    if args[0] == 'download':
+    if args[0] == 'downloadpy':
         download_pythons(config)
     elif args[0] == 'builddeps':
         build_dependencies(config)
