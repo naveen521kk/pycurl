@@ -124,7 +124,7 @@ class Config:
 # https://wiki.openssl.org/index.php/Compilation_and_Installation
 # http://developer.covenanteyes.com/building-openssl-for-visual-studio/
 
-import os, os.path, sys, contextlib, zipfile
+import os, os.path, sys, contextlib, zipfile, tempfile, glob
 from winbuild.utils import *
 from winbuild.config import *
 from winbuild.builder import *
@@ -241,12 +241,11 @@ def assemble(config):
             src = os.path.join(config.archives_path, builder.build_dir_name, 'dist')
             cp_r(config, src, '.')
 
-def get_nuget_args(bitness, version):
+def get_nuget_args(bitness, version, install_dir):
     python_name = "python"
     if bitness == 32:
         python_name += "x86"
-    install_dir = config.python_path_template% dict(bitness=bitness,python_release=version.replace('.',''))
-    install_dir = os.path.abspath(os.path.join(install_dir,os.path.pardir,os.path.pardir))
+    
     return [
         "install",
         python_name,
@@ -264,8 +263,15 @@ def download_pythons(config):
     for version in config.python_versions:
         for bitness in config.bitnesses:
             with gha_group(f"Download Python {version} {bitness}"):
-                args = [os.path.join(config.archives_path, "nuget.exe")]+get_nuget_args(bitness,version)
-                check_call(args)
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    args = [os.path.join(config.archives_path, "nuget.exe")]+get_nuget_args(bitness,version, tmpdir)
+                    check_call(args)
+                    install_dir = config.python_path_template% dict(bitness=bitness,python_release=version.replace('.',''))
+                    install_dir = os.path.abspath(os.path.join(install_dir,os.path.pardir,os.path.pardir))
+                    shutil.copytree(
+                        glob.glob(os.path.join(tmpdir,'*'))[0],
+                        install_dir
+                    )
 
 def assemble_deps(config):
     rm_rf(config, 'deps')
