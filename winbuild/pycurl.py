@@ -13,6 +13,8 @@ class PycurlBuilder(Builder):
     @property
     def python_path(self):
         python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path(self.bconf)
+        if not os.path.exists(python_path):
+            raise Exception(f"{python_path} doesn't exists.")
         return python_path
 
     @property
