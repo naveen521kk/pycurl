@@ -57,7 +57,7 @@ class Config:
     # where NASM is installed, for building OpenSSL
     nasm_path = ('c:/dev/nasm', 'c:/program files/nasm', 'c:/program files (x86)/nasm')
     cmake_path = r"c:\Program Files\CMake\bin\cmake.exe"
-    gmake_path = r"c:\Program Files (x86)\GnuWin32\bin\make.exe"
+    gmake_path = r"C:\dev\Gmake\bin\make.exe"
     # where ActiveState Perl is installed, for building 64-bit OpenSSL
     activestate_perl_path = (r'C:\Strawberry\perl', r'c:\dev\perl64')
     # which versions of python to build against
