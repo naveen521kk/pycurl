@@ -55,6 +55,10 @@ jobs:
           name: deps-${{ matrix.bitness }}-${{ matrix.python-version }}
           path: deps/*
 
+      - name: Copy CheckOut
+        shell: bash
+        run: |
+          cp -r $GITHUB_WORKSPACE 'c:/dev'
       - name: Build Wheels
         run: |
           python winbuild.py -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
