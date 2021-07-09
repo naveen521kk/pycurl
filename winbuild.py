@@ -63,7 +63,7 @@ class Config:
     # which versions of python to build against
     #python_versions = ['2.7.10', '3.2.5', '3.3.5', '3.4.3', '3.5.4', '3.6.2']
     # these require only vc9 and vc14
-    python_versions = ['3.6', '3.7', '3.8', '3.9']
+    python_versions = ['3.6.8', '3.7.9', '3.8.10', '3.9.6']
     # where pythons are installed
     python_path_template = 'c:/dev/%(bitness)s/python%(python_release)s/python'
     # overrides only, defaults are given in default_vc_paths below
