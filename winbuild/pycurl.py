@@ -12,10 +12,7 @@ class PycurlBuilder(Builder):
 
     @property
     def python_path(self):
-        if self.bconf.build_wheels:
-            python_path = os.path.join(self.bconf.archives_path, 'venv-%s-%s' % (self.python_release, self.bconf.bitness), 'scripts', 'python')
-        else:
-            python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path
+        python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path
         return python_path
 
     @property
