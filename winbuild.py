@@ -255,7 +255,7 @@ def get_nuget_args(bitness, version):
         "-FallbackSource",
         "https://api.nuget.org/v3/index.json",
         "-OutputDirectory",
-        config.python_path_template% dict(bitness=bitness,python_release=version.replace('.','')),
+        install_dir,
     ]
 
 def download_pythons(config):
