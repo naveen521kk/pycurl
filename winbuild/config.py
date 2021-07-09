@@ -44,7 +44,7 @@ class ExtendedConfig:
         
     @property
     def archives_path(self):
-        return os.path.join(self.root, 'archives')
+        return os.path.normpath(os.path.join(self.root, 'archives'))
         
     @property
     def state_path(self):
