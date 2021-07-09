@@ -261,8 +261,9 @@ def download_pythons(config):
     fetch_to_archives("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe")
     for version in config.python_versions:
         for bitness in config.bitnesses:
-            args = [os.path.join(config.archives_path, "nuget.exe")]+get_nuget_args(bitness,version)
-            check_call(args)
+            with gha_group(f"Download Python {version} {bitness}"):
+                args = [os.path.join(config.archives_path, "nuget.exe")]+get_nuget_args(bitness,version)
+                check_call(args)
 
 def assemble_deps(config):
     rm_rf(config, 'deps')
