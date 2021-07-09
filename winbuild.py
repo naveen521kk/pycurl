@@ -245,7 +245,7 @@ def get_nuget_args(bitness, version):
     python_name = "python"
     if bitness == "32":
         python_name += "x86"
-    install_dir = config.python_path_template.format(bitness=bitness,python_release=version.replace('.',''))
+    install_dir = config.python_path_template% dict(bitness=bitness,python_release=version.replace('.',''))
     install_dir = os.path.abspath(os.path.join(install_dir,os.path.pardir,os.path.pardir))
     return [
         "install",
