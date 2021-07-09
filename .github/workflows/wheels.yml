@@ -72,12 +72,12 @@ jobs:
           cp -r $GITHUB_WORKSPACE 'c:/dev'
 
       - name: Build Wheels
-        continue-on-error: 'true'
+        continue-on-error: true
         run: |
           python winbuild.py -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
       
       - name: Assemble Wheels
-        continue-on-error: 'true'
+        continue-on-error: true
         run: |
           python winbuild.py assemble -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
 
