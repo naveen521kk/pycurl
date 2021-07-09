@@ -212,7 +212,7 @@ def build_dependencies(config):
                 if opts.verbose:
                     print('Builddep for %s, %s-bit' % (bconf.vc_version, bconf.bitness))
                 for builder in dep_builders(bconf):
-                    with gha_group(builder.__name__):
+                    with gha_group(str(builder)):
                         step(builder.build, (), builder.state_tag)
 
 def build(config):
