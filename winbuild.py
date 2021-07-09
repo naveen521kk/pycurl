@@ -152,6 +152,17 @@ def fetch_to_archives(url):
     path = os.path.join(config.archives_path, os.path.basename(url))
     fetch(url, path)
 
+
+@contextlib.contextmanager
+def gha_group(title):
+    print(f'\n::group::{title}')
+    sys.stdout.flush()
+    try:
+        yield
+    finally:
+        print('::endgroup::')
+        sys.stdout.flush()
+
 @contextlib.contextmanager
 def step(step_fn, args, target_dir):
     #step = step_fn.__name__
@@ -201,7 +212,8 @@ def build_dependencies(config):
                 if opts.verbose:
                     print('Builddep for %s, %s-bit' % (bconf.vc_version, bconf.bitness))
                 for builder in dep_builders(bconf):
-                    step(builder.build, (), builder.state_tag)
+                    with gha_group(builder.__name__):
+                        step(builder.build, (), builder.state_tag)
 
 def build(config):
     # note: adds git_bin_path to PATH if necessary, and creates archives_path
