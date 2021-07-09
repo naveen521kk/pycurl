@@ -4,6 +4,8 @@ from .builder import *
 
 class ZlibBuilder(StandardBuilder):
     def build(self):
+        if not self.whether_to_build():
+            return
         zlib_dir = self.standard_fetch_extract(
             'http://downloads.sourceforge.net/project/libpng/zlib/%(my_version)s/zlib-%(my_version)s.tar.gz')
         with in_dir(zlib_dir):

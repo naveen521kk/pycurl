@@ -65,7 +65,7 @@ class Config:
     # these require only vc9 and vc14
     python_versions = ['3.6.8', '3.7.9', '3.8.10', '3.9.6']
     # where pythons are installed
-    python_path_template = 'c:/dev/%(bitness)s/python%(python_release)s/tools/python.exe'
+    python_path_template = 'c:/python/%(bitness)s/python%(python_release)s/tools/python.exe'
     # overrides only, defaults are given in default_vc_paths below
     vc_paths = {
         # where msvc 9/vs 2008 is installed, for python 2.6 through 3.2

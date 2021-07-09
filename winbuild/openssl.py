@@ -8,6 +8,8 @@ class OpensslBuilder(StandardBuilder):
         # nasm output is redirected to NUL which ends up creating a file named NUL.
         # however being a reserved file name this file is not deletable by
         # ordinary tools.
+        if not self.whether_to_build():
+            return
         nul_file = "openssl-%s-%s\\NUL" % (self.bconf.openssl_version, self.bconf.vc_tag)
         check_call(['rm', '-f', nul_file])
         openssl_dir = self.standard_fetch_extract(

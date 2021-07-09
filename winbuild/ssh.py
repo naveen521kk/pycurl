@@ -5,6 +5,8 @@ from .zlib import ZlibBuilder
 
 class Libssh2Builder(StandardBuilder):
     def build(self):
+        if not self.whether_to_build():
+            return
         libssh2_dir = self.standard_fetch_extract(
             'http://www.libssh2.org/download/libssh2-%(my_version)s.tar.gz')
         with in_dir(libssh2_dir):

@@ -3,6 +3,8 @@ from .builder import *
 
 class Nghttp2Builder(StandardBuilder):
     def build(self):
+        if not self.whether_to_build():
+            return
         nghttp2_dir = self.standard_fetch_extract(
             'https://github.com/nghttp2/nghttp2/releases/download/v%(my_version)s/nghttp2-%(my_version)s.tar.gz')
                 
