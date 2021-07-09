@@ -59,7 +59,7 @@ class Config:
     cmake_path = r"c:\Program Files\CMake\bin\cmake.exe"
     gmake_path = r"c:\Program Files (x86)\GnuWin32\bin\make.exe"
     # where ActiveState Perl is installed, for building 64-bit OpenSSL
-    activestate_perl_path = (r'c:\strawberry', r'c:\dev\perl64')
+    activestate_perl_path = (r'C:\Strawberry\perl', r'c:\dev\perl64')
     # which versions of python to build against
     #python_versions = ['2.7.10', '3.2.5', '3.3.5', '3.4.3', '3.5.4', '3.6.2']
     # these require only vc9 and vc14
