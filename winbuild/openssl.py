@@ -38,6 +38,7 @@ class OpensslBuilder(StandardBuilder):
                 # and in x86 assembly as well in openssl 1.1.0;
                 # use ActiveState Perl
                 if not os.path.exists(self.bconf.activestate_perl_bin_path):
+                    print(self.bconf.activestate_perl_bin_path)
                     raise ValueError('activestate_perl_bin_path refers to a nonexisting path')
                 if not os.path.exists(os.path.join(self.bconf.activestate_perl_bin_path, 'perl.exe')):
                     raise ValueError('No perl binary in activestate_perl_bin_path')
