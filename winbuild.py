@@ -65,7 +65,7 @@ class Config:
     # these require only vc9 and vc14
     python_versions = ['3.6.8', '3.7.9', '3.8.10', '3.9.6']
     # where pythons are installed
-    python_path_template = 'c:/dev/%(bitness)s/python%(python_release)s/python'
+    python_path_template = 'c:/dev/%(bitness)s/python%(python_release)s/tools/python.exe'
     # overrides only, defaults are given in default_vc_paths below
     vc_paths = {
         # where msvc 9/vs 2008 is installed, for python 2.6 through 3.2
@@ -245,6 +245,8 @@ def get_nuget_args(bitness, version):
     python_name = "python"
     if bitness == "32":
         python_name += "x86"
+    install_dir = config.python_path_template.format(bitness=bitness,python_release=version.replace('.',''))
+    install_dir = os.path.abspath(os.path.join(install_dir,os.path.pardir,os.path.pardir))
     return [
         "install",
         python_name,
@@ -253,7 +255,7 @@ def get_nuget_args(bitness, version):
         "-FallbackSource",
         "https://api.nuget.org/v3/index.json",
         "-OutputDirectory",
-        os.path.join(config.archives_path, "python"),
+        config.python_path_template.format(bitness=bitness,python_release=version.replace('.','')),
     ]
 
 def download_pythons(config):
