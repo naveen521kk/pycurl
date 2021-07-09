@@ -234,6 +234,7 @@ def get_nuget_args(bitness, version):
     if bitness == "32":
         python_name += "x86"
     return [
+        "install",
         python_name,
         "-Version",
         version,
