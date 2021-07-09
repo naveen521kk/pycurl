@@ -62,3 +62,12 @@ jobs:
       - name: Build Wheels
         run: |
           python winbuild.py -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+      
+      - name: Assemble Wheels
+        run: |
+          python winbuild.py assemble -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist-${{ matrix.bitness }}-${{ matrix.python-version }}
+          path: dist/*
