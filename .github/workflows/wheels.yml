@@ -22,7 +22,7 @@ jobs:
         shell: pwsh
         run: |
           curl.exe -OL "https://www.nasm.us/pub/nasm/releasebuilds/$($env:NASM_VERSION)/win64/nasm-$($env:NASM_VERSION)-win64.zip"
-          7z x nasm-${NASM_VERSION}-win64.zip -oC:/dev/nasm
+          7z x nasm-$($env:NASM_VERSION)-win64.zip -oC:/dev/nasm
           echo "C:\dev\nasm\nasm-${NASM_VERSION}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install Gmake
