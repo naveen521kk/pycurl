@@ -12,7 +12,7 @@ class PycurlBuilder(Builder):
 
     @property
     def python_path(self):
-        python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path
+        python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path(self.bconf)
         return python_path
 
     @property
