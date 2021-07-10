@@ -338,8 +338,8 @@ def run_test(config):
                             [i for i in f.readlines() if not i.startswith("#")]
                         )
                     with in_dir(DIR_HERE):
-                        new_wheel = os.path.join(DIR_HERE, "dist", os.path.basename(wheel))
-                        shutil.copy(wheel, new_wheel)
+                        wheel_name = os.path.basename(wheel)
+                        shutil.copy(wheel, DIR_HERE)
                         # use docker for testing
                         check_call(
                             [
@@ -348,7 +348,7 @@ def run_test(config):
                                 "--build-arg",
                                 "PYTHON_VERSION=%s" % python_release,
                                 "--build-arg",
-                                "WHEEL_NAME=%s" % new_wheel,
+                                "WHEEL_NAME=%s" % wheel_name,
                                 "--build-arg",
                                 'TEST_REQUIRES="%s"' % requirements,
                                 "-f",
