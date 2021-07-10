@@ -337,36 +337,37 @@ def run_test(config):
                         requirements = " ".join(
                             [i for i in f.readlines() if not i.startswith("#")]
                         )
-                    # use docker for testing
-                    check_call(
-                        [
-                            "docker",
-                            "build",
-                            "--build-arg",
-                            "PYTHON_VERSION=%s" % python_release,
-                            "--build-arg",
-                            "WHEEL_NAME=%s" % wheel,
-                            "--build-arg",
-                            'TEST_REQUIRES="%s"' % requirements,
-                            "-f",
-                            os.path.join(DIR_HERE, "winbuild", "Windows.dockerfile"),
-                            "-t",
-                            "pycurl/minimal-windows",
-                            ".",
-                        ]
-                    )
-                    check_call(
-                        [
-                            "docker",
-                            "container",
-                            "run",
-                            "--rm",
-                            "pycurl/minimal-windows",
-                            "powershell",
-                            "-Command",
-                            '"nosetests"',
-                        ]
-                    )
+                    with in_dir(DIR_HERE):
+                        # use docker for testing
+                        check_call(
+                            [
+                                "docker",
+                                "build",
+                                "--build-arg",
+                                "PYTHON_VERSION=%s" % python_release,
+                                "--build-arg",
+                                "WHEEL_NAME=%s" % wheel,
+                                "--build-arg",
+                                'TEST_REQUIRES="%s"' % requirements,
+                                "-f",
+                                os.path.join(DIR_HERE, "winbuild", "Windows.dockerfile"),
+                                "-t",
+                                "pycurl/minimal-windows",
+                                ".",
+                            ]
+                        )
+                        check_call(
+                            [
+                                "docker",
+                                "container",
+                                "run",
+                                "--rm",
+                                "pycurl/minimal-windows",
+                                "powershell",
+                                "-Command",
+                                '"nosetests"',
+                            ]
+                        )
 
 import optparse
 
