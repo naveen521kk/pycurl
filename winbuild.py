@@ -335,7 +335,6 @@ def run_test(config):
                 else:
                     with in_dir(DIR_HERE):
                         wheel_name = os.path.basename(wheel)
-                        requirements_file = os.path.join(DIR_HERE, "requirements-dev.txt")
                         shutil.copy(wheel, DIR_HERE)
                         # use docker for testing
                         check_call(
@@ -347,7 +346,7 @@ def run_test(config):
                                 "--build-arg",
                                 "WHEEL_NAME=%s" % wheel_name,
                                 "--build-arg",
-                                'REQUIREMENT_FILE="%s"' % requirements_file,
+                                'REQUIREMENT_FILE="%s"' % "requirements-dev.txt",
                                 "-f",
                                 os.path.join(DIR_HERE, "winbuild", "Windows.dockerfile"),
                                 "-t",
