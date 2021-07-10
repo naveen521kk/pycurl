@@ -346,7 +346,7 @@ def run_test(config):
                                 "--build-arg",
                                 "WHEEL_NAME=%s" % wheel_name,
                                 "--build-arg",
-                                'REQUIREMENT_FILE="%s"' % "requirements-dev.txt",
+                                'REQUIREMENT_FILE=%s' % "requirements-dev.txt",
                                 "-f",
                                 os.path.join(DIR_HERE, "winbuild", "Windows.dockerfile"),
                                 "-t",
