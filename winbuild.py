@@ -266,7 +266,7 @@ def download_pythons(config):
                 with tempfile.TemporaryDirectory() as tmpdir:
                     args = [os.path.join(config.archives_path, "nuget.exe")]+get_nuget_args(bitness,version, tmpdir)
                     check_call(args)
-                    install_dir = config.python_path_template% dict(bitness=bitness,python_release=version.replace('.',''))
+                    install_dir = config.python_path_template% dict(bitness=bitness, python_release=PythonVersion(version).release.dotless)
                     install_dir = os.path.abspath(os.path.join(install_dir,os.path.pardir,os.path.pardir))
                     shutil.copytree(
                         glob.glob(os.path.join(tmpdir,'*'))[0],
