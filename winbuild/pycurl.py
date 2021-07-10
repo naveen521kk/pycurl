@@ -39,6 +39,8 @@ class PycurlBuilder(Builder):
                 for dll_path in dll_paths:
                     shutil.copy(dll_path, dest_lib_path)
             with self.execute_batch() as b:
+                b.add("%s -m ensurepip"% (self.python_path,))
+                b.add("%s -m pip install setuptools wheel"% (self.python_path,))
                 b.add("%s setup.py docstrings" % (self.python_path,))
                 if self.use_dlls:
                     libcurl_arg = '--use-libcurl-dll'
