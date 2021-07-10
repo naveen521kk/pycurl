@@ -333,12 +333,9 @@ def run_test(config):
                         )
                         check_call([new_py_exe, "-m", "nose"])
                 else:
-                    with open(os.path.join(DIR_HERE, "requirements-dev.txt")) as f:
-                        requirements = " ".join(
-                            [i for i in f.readlines() if not i.startswith("#")]
-                        )
                     with in_dir(DIR_HERE):
                         wheel_name = os.path.basename(wheel)
+                        requirements_file = os.path.join(DIR_HERE, "requirements-dev.txt")
                         shutil.copy(wheel, DIR_HERE)
                         # use docker for testing
                         check_call(
@@ -350,7 +347,7 @@ def run_test(config):
                                 "--build-arg",
                                 "WHEEL_NAME=%s" % wheel_name,
                                 "--build-arg",
-                                'TEST_REQUIRES="%s"' % requirements,
+                                'REQUIREMENT_FILE="%s"' % requirements_file,
                                 "-f",
                                 os.path.join(DIR_HERE, "winbuild", "Windows.dockerfile"),
                                 "-t",
