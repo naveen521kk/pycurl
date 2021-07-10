@@ -241,23 +241,22 @@ def assemble(config):
             src = os.path.join(config.archives_path, builder.build_dir_name, 'dist')
             cp_r(config, src, '.')
 
-def get_nuget_args(bitness, version, install_dir):
-    python_name = "python"
-    if bitness == 32:
-        python_name += "x86"
-    
-    return [
-        "install",
-        python_name,
-        "-Version",
-        version,
-        "-FallbackSource",
-        "https://api.nuget.org/v3/index.json",
-        "-OutputDirectory",
-        install_dir,
-    ]
-
 def download_pythons(config):
+    def get_nuget_args(bitness, version, install_dir):
+        python_name = "python"
+        if bitness == 32:
+            python_name += "x86"
+        
+        return [
+            "install",
+            python_name,
+            "-Version",
+            version,
+            "-FallbackSource",
+            "https://api.nuget.org/v3/index.json",
+            "-OutputDirectory",
+            install_dir,
+        ]
     # download nuget
     fetch_to_archives("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe")
     for version in config.python_versions:
@@ -300,6 +299,74 @@ def get_deps():
     vc_tag = '%s-%d' % (vc_version, bitness)
     fetch('https://dl.bintray.com/pycurl/deps/%s.zip' % vc_tag)
     check_call(['unzip', '-d', 'deps', vc_tag + '.zip'])
+
+def run_test(config):
+    with in_dir(config.archives_path):
+        for bitness in config.bitnesses:
+            for python_release in config.python_releases:
+                vc_version = PYTHON_VC_VERSIONS[python_release]
+                bconf = BuildConfig(config, bitness=bitness, vc_version=vc_version)
+                builder = PycurlBuilder(bconf=bconf, python_release=python_release)
+                python_exe = builder.python_path
+                dist_location = os.path.join(
+                    config.archives_path, builder.build_dir_name, "dist"
+                )
+                wheel = glob.glob(os.path.join(dist_location, "*.whl"))[0]
+                if bitness == 32:
+                    # don't use docker. it is unsupported. instead
+                    # use venv
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        check_call([python_exe, "-m", "ensurepip", "-U"])
+                        check_call([python_exe, "-m", "venv", tmpdir])
+                        new_py_exe = os.path.join(tmpdir, "Scripts", "python.exe")
+                        check_call([new_py_exe, "-m", "pip", "install", wheel])
+                        check_call([new_py_exe, "-m", "pip", "install", wheel])
+                        check_call(
+                            [
+                                new_py_exe,
+                                "-m",
+                                "pip",
+                                "install",
+                                "-r",
+                                os.path.join(DIR_HERE, "requirements-dev.txt"),
+                            ]
+                        )
+                        check_call([new_py_exe, "-m", "nose"])
+                else:
+                    with open(os.path.join(DIR_HERE, "requirements-dev.txt")) as f:
+                        requirements = " ".join(
+                            [i for i in f.readlines() if not i.startswith("#")]
+                        )
+                    # use docker for testing
+                    check_call(
+                        [
+                            "docker",
+                            "build",
+                            "--build-arg",
+                            "PYTHON_VERSION=%s" % python_release,
+                            "--build-arg",
+                            "WHEEL_NAME=%s" % wheel,
+                            "--build-arg",
+                            'TEST_REQUIRES="%s"' % requirements,
+                            "-f",
+                            os.path.join(DIR_HERE, "winbuild", "Windows.dockerfile"),
+                            "-t",
+                            "pycurl/minimal-windows",
+                            ".",
+                        ]
+                    )
+                    check_call(
+                        [
+                            "docker",
+                            "container",
+                            "run",
+                            "--rm",
+                            "pycurl/minimal-windows",
+                            "powershell",
+                            "-Command",
+                            '"nosetests"',
+                        ]
+                    )
 
 import optparse
 
@@ -358,6 +425,8 @@ if len(args) > 0:
         assemble(config)
     elif args[0] == 'getdeps':
         get_deps()
+    elif args[0] == 'test':
+        run_test(config)
     else:
         print('Unknown command: %s' % args[0])
         exit(2)

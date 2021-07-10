@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.6.8, 3.7.9, 3.8.10]
-        bitness: [32,64]
+        bitness: [32, 64]
     env:
       NASM_VERSION: 2.15.05
       GMAKE_VERSION: 3.81
@@ -75,11 +75,16 @@ jobs:
         continue-on-error: true
         run: |
           python winbuild.py -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
-      
+
       - name: Assemble Wheels
         continue-on-error: true
         run: |
           python winbuild.py assemble -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - name: Test Wheels
+        continue-on-error: true
+        run: |
+          python winbuild.py test -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
 
       - uses: actions/upload-artifact@v2
         with:
