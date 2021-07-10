@@ -124,7 +124,7 @@ class Config:
 # https://wiki.openssl.org/index.php/Compilation_and_Installation
 # http://developer.covenanteyes.com/building-openssl-for-visual-studio/
 
-import os, os.path, sys, contextlib, zipfile, tempfile, glob
+import os, os.path, sys, contextlib, zipfile, tempfile, glob, shutil
 from winbuild.utils import *
 from winbuild.config import *
 from winbuild.builder import *
@@ -338,6 +338,8 @@ def run_test(config):
                             [i for i in f.readlines() if not i.startswith("#")]
                         )
                     with in_dir(DIR_HERE):
+                        new_wheel = os.path.join(DIR_HERE, "dist", os.path.basename(wheel))
+                        shutil.copy(wheel, new_wheel)
                         # use docker for testing
                         check_call(
                             [
@@ -346,7 +348,7 @@ def run_test(config):
                                 "--build-arg",
                                 "PYTHON_VERSION=%s" % python_release,
                                 "--build-arg",
-                                "WHEEL_NAME=%s" % wheel,
+                                "WHEEL_NAME=%s" % new_wheel,
                                 "--build-arg",
                                 'TEST_REQUIRES="%s"' % requirements,
                                 "-f",
