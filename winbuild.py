@@ -17,7 +17,7 @@
 #     Then execute:
 #     c:\dev\python-3.8.0.exe /norestart /passive InstallAllUsers=1 Include_test=0 Include_doc=0 Include_launcher=0 Include_tcltk=0 TargetDir=c:\dev\32\python38
 #  3. Define python versions to build for in the configuration below, then
-#     run `python winbuild.py download` and `python winbuild.py installpy` to install them.
+#     run `python winbuild.py download` to dowload a portable version of them.
 #  4. Download and install visual studio. Any edition of 2015 or newer should work;
 #     2019 in particular (including community edition) provides batch files to set up a 2015 build environment,
 #     such that there is no reason to get an older version.
@@ -34,8 +34,6 @@
 # 9b. Download and install gmake: http://gnuwin32.sourceforge.net/packages/make.htm
 # 10. Run `python winbuild.py builddeps` to compile all dependencies for all environments (32/64 bit and python versions).
 # 11. Optional: run `python winbuild.py assembledeps` to assemble all dependencies into archives suitable for use in appveyor.
-# 12. Run `python winbuild.py installvirtualenv` to install virtualenv in all python interpreters.
-# 13. Run `python winbuild.py createvirtualenvs` to create virtualenvs used for pycurl compilation.
 # 14. Run `python winbuild.py` to compile pycurl in all defined configurations.
 # 15. Optional: run `python winbuild.py assemble` to assemble all built versions of pycurl in the current directory.
 
@@ -59,15 +57,15 @@ class Config:
     # where NASM is installed, for building OpenSSL
     nasm_path = ('c:/dev/nasm', 'c:/program files/nasm', 'c:/program files (x86)/nasm')
     cmake_path = r"c:\Program Files\CMake\bin\cmake.exe"
-    gmake_path = r"c:\Program Files (x86)\GnuWin32\bin\make.exe"
+    gmake_path = r"C:\dev\Gmake\bin\make.exe"
     # where ActiveState Perl is installed, for building 64-bit OpenSSL
-    activestate_perl_path = ('c:/perl64', r'c:\dev\perl64')
+    activestate_perl_path = (r'C:\Strawberry\perl', r'c:\dev\perl64')
     # which versions of python to build against
     #python_versions = ['2.7.10', '3.2.5', '3.3.5', '3.4.3', '3.5.4', '3.6.2']
     # these require only vc9 and vc14
-    python_versions = ['3.5.4', '3.6.8', '3.7.6', '3.8.1']
+    python_versions = ['3.6.8', '3.7.9', '3.8.10', '3.9.6']
     # where pythons are installed
-    python_path_template = 'c:/dev/%(bitness)s/python%(python_release)s/python'
+    python_path_template = 'c:/python/%(bitness)s/python%(python_release)s/tools/python.exe'
     # overrides only, defaults are given in default_vc_paths below
     vc_paths = {
         # where msvc 9/vs 2008 is installed, for python 2.6 through 3.2
@@ -84,7 +82,7 @@ class Config:
     # whether to use openssl instead of winssl
     use_openssl = True
     # which version of openssl to use, will be downloaded from internet
-    openssl_version = '1.1.1d'
+    openssl_version = '1.1.1k'
     # whether to use c-ares
     use_cares = True
     cares_version = '1.15.0'
@@ -98,8 +96,6 @@ class Config:
     libidn_version = '1.35'
     # which version of libcurl to use, will be downloaded from internet
     libcurl_version = '7.68.0'
-    # virtualenv version
-    virtualenv_version = '15.1.0'
     # whether to build binary wheels
     build_wheels = True
     # pycurl version to build, we should know this ourselves
@@ -109,13 +105,13 @@ class Config:
     # another application for this is to supply normaliz.lib for vc9
     # which has an older version that doesn't have the symbols we need
     windows_sdk_path = 'c:\\program files (x86)\\microsoft sdks\\windows\\v7.1a'
-    
+
     # See the note below about VCTargetsPath and
     # https://stackoverflow.com/questions/16092169/why-does-msbuild-look-in-c-for-microsoft-cpp-default-props-instead-of-c-progr.
     # Since we are targeting vc14, use the v140 path.
     vc_targets_path = "c:\\Program Files (x86)\\MSBuild\\Microsoft.Cpp\\v4.0\\v140"
     #vc_targets_path = "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current"
-    
+
     # Where the msbuild that is part of visual studio lives
     msbuild_bin_path = "c:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin"
 
@@ -128,7 +124,7 @@ class Config:
 # https://wiki.openssl.org/index.php/Compilation_and_Installation
 # http://developer.covenanteyes.com/building-openssl-for-visual-studio/
 
-import os, os.path, sys, subprocess, shutil, contextlib, zipfile, re
+import os, os.path, sys, contextlib, zipfile, tempfile, glob, shutil
 from winbuild.utils import *
 from winbuild.config import *
 from winbuild.builder import *
@@ -155,6 +151,17 @@ def fetch_to_archives(url):
     mkdir_p(config.archives_path)
     path = os.path.join(config.archives_path, os.path.basename(url))
     fetch(url, path)
+
+
+@contextlib.contextmanager
+def gha_group(title):
+    print(f'\n::group::{title}')
+    sys.stdout.flush()
+    try:
+        yield
+    finally:
+        print('::endgroup::')
+        sys.stdout.flush()
 
 @contextlib.contextmanager
 def step(step_fn, args, target_dir):
@@ -205,7 +212,8 @@ def build_dependencies(config):
                 if opts.verbose:
                     print('Builddep for %s, %s-bit' % (bconf.vc_version, bconf.bitness))
                 for builder in dep_builders(bconf):
-                    step(builder.build, (), builder.state_tag)
+                    with gha_group(str(builder)):
+                        step(builder.build, (), builder.state_tag)
 
 def build(config):
     # note: adds git_bin_path to PATH if necessary, and creates archives_path
@@ -213,7 +221,7 @@ def build(config):
     with in_dir(config.archives_path):
         for bitness in config.bitnesses:
             for python_release in config.python_releases:
-                targets = ['bdist', 'bdist_wininst', 'bdist_msi']
+                targets = ['bdist']
                 vc_version = PYTHON_VC_VERSIONS[python_release]
                 bconf = BuildConfig(config, bitness=bitness, vc_version=vc_version)
                 builder = PycurlBuilder(bconf=bconf, python_release=python_release)
@@ -233,84 +241,36 @@ def assemble(config):
             src = os.path.join(config.archives_path, builder.build_dir_name, 'dist')
             cp_r(config, src, '.')
 
-def python_metas():
-    metas = []
-    for version in config.python_versions:
-        parts = [int(part) for part in version.split('.')]
-        if parts[0] >= 3 and parts[1] >= 5:
-            ext = 'exe'
-            amd64_suffix = '-amd64'
-        else:
-            ext = 'msi'
-            amd64_suffix = '.amd64'
-        url_32 = 'https://www.python.org/ftp/python/%s/python-%s.%s' % (version, version, ext)
-        url_64 = 'https://www.python.org/ftp/python/%s/python-%s%s.%s' % (version, version, amd64_suffix, ext)
-        meta = dict(
-            version=version, ext=ext, amd64_suffix=amd64_suffix,
-            url_32=url_32, url_64=url_64,
-            installed_path_32 = 'c:\\dev\\32\\python%d%d' % (parts[0], parts[1]),
-            installed_path_64 = 'c:\\dev\\64\\python%d%d' % (parts[0], parts[1]),
-        )
-        metas.append(meta)
-    return metas
-
 def download_pythons(config):
-    for meta in python_metas():
-        for bitness in config.bitnesses:
-            fetch_to_archives(meta['url_%d' % bitness])
-
-def install_pythons(config):
-    for meta in python_metas():
-        for bitness in config.bitnesses:
-            if not os.path.exists(meta['installed_path_%d' % bitness]):
-                install_python(config, meta, bitness)
-
-# http://eddiejackson.net/wp/?p=10276
-def install_python(config, meta, bitness):
-    archive_path = fix_slashes(os.path.join(config.archives_path, os.path.basename(meta['url_%d' % bitness])))
-    if meta['ext'] == 'exe':
-        cmd = [archive_path]
-    else:
-        cmd = ['msiexec', '/i', archive_path, '/norestart']
-    cmd += ['/passive', 'InstallAllUsers=1',
-            'Include_test=0', 'Include_doc=0', 'Include_launcher=0',
-            'Include_tcltk=0',
-            'TargetDir=%s' % meta['installed_path_%d' % bitness],
+    def get_nuget_args(bitness, version, install_dir):
+        python_name = "python"
+        if bitness == 32:
+            python_name += "x86"
+        
+        return [
+            "install",
+            python_name,
+            "-Version",
+            version,
+            "-FallbackSource",
+            "https://api.nuget.org/v3/index.json",
+            "-OutputDirectory",
+            install_dir,
         ]
-    sys.stdout.write('Installing python %s (%d bit)\n' % (meta['version'], bitness))
-    print(' '.join(cmd))
-    sys.stdout.flush()
-    check_call(cmd)
-
-def download_bootstrap_python(config):
-    version = config.python_versions[-2]
-    url = 'https://www.python.org/ftp/python/%s/python-%s.msi' % (version, version)
-    fetch(url)
-
-def install_virtualenv(config):
-    with in_dir(config.archives_path):
-        #fetch('https://pypi.python.org/packages/source/v/virtualenv/virtualenv-%s.tar.gz' % virtualenv_version)
-        fetch('https://pypi.python.org/packages/d4/0c/9840c08189e030873387a73b90ada981885010dd9aea134d6de30cd24cb8/virtualenv-15.1.0.tar.gz')
+    # download nuget
+    fetch_to_archives("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe")
+    for version in config.python_versions:
         for bitness in config.bitnesses:
-            for python_release in config.python_releases:
-                print('Installing virtualenv %s for Python %s (%s bit)' % (config.virtualenv_version, python_release, bitness))
-                sys.stdout.flush()
-                untar(config, 'virtualenv-%s' % config.virtualenv_version)
-                with in_dir('virtualenv-%s' % config.virtualenv_version):
-                    python_binary = PythonBinary(python_release, bitness)
-                    cmd = [python_binary.executable_path(config), 'setup.py', 'install']
-                    check_call(cmd)
-
-def create_virtualenvs(config):
-    for bitness in config.bitnesses:
-        for python_release in config.python_releases:
-            print('Creating a virtualenv for Python %s (%s bit)' % (python_release, bitness))
-            sys.stdout.flush()
-            with in_dir(config.archives_path):
-                python_binary = PythonBinary(python_release, bitness)
-                venv_basename = 'venv-%s-%s' % (python_release, bitness)
-                cmd = [python_binary.executable_path(config), '-m', 'virtualenv', venv_basename]
-                check_call(cmd)
+            with gha_group(f"Download Python {version} {bitness}"):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    args = [os.path.join(config.archives_path, "nuget.exe")]+get_nuget_args(bitness,version, tmpdir)
+                    check_call(args)
+                    install_dir = config.python_path_template% dict(bitness=bitness, python_release=PythonVersion(version).release.dotless)
+                    install_dir = os.path.abspath(os.path.join(install_dir,os.path.pardir,os.path.pardir))
+                    shutil.copytree(
+                        glob.glob(os.path.join(tmpdir,'*'))[0],
+                        install_dir
+                    )
 
 def assemble_deps(config):
     rm_rf(config, 'deps')
@@ -332,13 +292,80 @@ def assemble_deps(config):
 
 def get_deps():
     import struct
-    
+
     python_release = sys.version_info[:2]
     vc_version = PYTHON_VC_VERSIONS['.'.join(map(str, python_release))]
     bitness = struct.calcsize('P') * 8
     vc_tag = '%s-%d' % (vc_version, bitness)
     fetch('https://dl.bintray.com/pycurl/deps/%s.zip' % vc_tag)
     check_call(['unzip', '-d', 'deps', vc_tag + '.zip'])
+
+def run_test(config):
+    with in_dir(config.archives_path):
+        for bitness in config.bitnesses:
+            for python_release in config.python_releases:
+                vc_version = PYTHON_VC_VERSIONS[python_release]
+                bconf = BuildConfig(config, bitness=bitness, vc_version=vc_version)
+                builder = PycurlBuilder(bconf=bconf, python_release=python_release)
+                python_exe = builder.python_path
+                dist_location = os.path.join(
+                    config.archives_path, builder.build_dir_name, "dist"
+                )
+                wheel = glob.glob(os.path.join(dist_location, "*.whl"))[0]
+                if bitness == 32:
+                    # don't use docker. it is unsupported. instead
+                    # use venv
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        check_call([python_exe, "-m", "ensurepip", "-U"])
+                        check_call([python_exe, "-m", "venv", tmpdir])
+                        new_py_exe = os.path.join(tmpdir, "Scripts", "python.exe")
+                        check_call([new_py_exe, "-m", "pip", "install", wheel])
+                        check_call([new_py_exe, "-m", "pip", "install", wheel])
+                        check_call(
+                            [
+                                new_py_exe,
+                                "-m",
+                                "pip",
+                                "install",
+                                "-r",
+                                os.path.join(DIR_HERE, "requirements-dev.txt"),
+                            ]
+                        )
+                        check_call([new_py_exe, "-m", "nose"])
+                else:
+                    with in_dir(DIR_HERE):
+                        wheel_name = os.path.basename(wheel)
+                        shutil.copy(wheel, DIR_HERE)
+                        # use docker for testing
+                        check_call(
+                            [
+                                "docker",
+                                "build",
+                                "--build-arg",
+                                "PYTHON_VERSION=%s" % python_release,
+                                "--build-arg",
+                                "WHEEL_NAME=%s" % wheel_name,
+                                "--build-arg",
+                                'REQUIREMENT_FILE=%s' % "requirements-dev.txt",
+                                "-f",
+                                os.path.join(DIR_HERE, "winbuild", "Windows.dockerfile"),
+                                "-t",
+                                "pycurl/minimal-windows",
+                                ".",
+                            ]
+                        )
+                        check_call(
+                            [
+                                "docker",
+                                "container",
+                                "run",
+                                "--rm",
+                                "pycurl/minimal-windows",
+                                "powershell",
+                                "-Command",
+                                '"nosetests"',
+                            ]
+                        )
 
 import optparse
 
@@ -387,24 +414,18 @@ def buildconfigs():
     ]
 
 if len(args) > 0:
-    if args[0] == 'download':
+    if args[0] == 'downloadpy':
         download_pythons(config)
-    elif args[0] == 'bootstrap':
-        download_bootstrap_python(config)
-    elif args[0] == 'installpy':
-        install_pythons(config)
     elif args[0] == 'builddeps':
         build_dependencies(config)
-    elif args[0] == 'installvirtualenv':
-        install_virtualenv(config)
-    elif args[0] == 'createvirtualenvs':
-        create_virtualenvs(config)
     elif args[0] == 'assembledeps':
         assemble_deps(config)
     elif args[0] == 'assemble':
         assemble(config)
     elif args[0] == 'getdeps':
         get_deps()
+    elif args[0] == 'test':
+        run_test(config)
     else:
         print('Unknown command: %s' % args[0])
         exit(2)

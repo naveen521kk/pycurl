@@ -3,6 +3,8 @@ from .builder import *
 
 class LibiconvBuilder(StandardBuilder):
     def build(self):
+        if not self.whether_to_build():
+            return
         libiconv_dir = self.standard_fetch_extract(
             'https://ftp.gnu.org/pub/gnu/libiconv/libiconv-%(my_version)s.tar.gz')
         with in_dir(libiconv_dir):

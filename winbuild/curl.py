@@ -9,6 +9,8 @@ from .nghttp_gmake import *
 
 class LibcurlBuilder(StandardBuilder):
     def build(self):
+        if not self.whether_to_build():
+            return
         curl_dir = self.standard_fetch_extract(
             'https://curl.haxx.se/download/curl-%(my_version)s.tar.gz')
     

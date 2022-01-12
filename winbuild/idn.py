@@ -3,6 +3,8 @@ from .builder import *
 
 class LibidnBuilder(StandardBuilder):
     def build(self):
+        if not self.whether_to_build():
+            return
         libidn_dir = self.standard_fetch_extract(
             'https://ftp.gnu.org/gnu/libidn/libidn-%(my_version)s.tar.gz')
         with in_dir(libidn_dir):

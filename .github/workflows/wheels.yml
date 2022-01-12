@@ -1,0 +1,93 @@
+name: Build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.6.8, 3.7.9, 3.8.10]
+        bitness: [32, 64]
+    env:
+      NASM_VERSION: 2.15.05
+      GMAKE_VERSION: 3.81
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8 # to run script
+
+      - name: Cache multiple paths
+        id: cache-deps
+        uses: actions/cache@v2
+        with:
+          path: |
+            C:\dev
+          key: ${{ hashFiles('winbuild.py') }}-${{ matrix.bitness }}
+
+      - name: Install Nasm
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          curl.exe -OL "https://www.nasm.us/pub/nasm/releasebuilds/$($env:NASM_VERSION)/win64/nasm-$($env:NASM_VERSION)-win64.zip"
+          7z x nasm-$($env:NASM_VERSION)-win64.zip -oC:/dev/nasm
+          echo "C:\dev\nasm\nasm-$($env:NASM_VERSION)" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Gmake
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          curl.exe -OL "https://downloads.sourceforge.net/project/gnuwin32/make/$($env:GMAKE_VERSION)/make-$($env:GMAKE_VERSION)-bin.zip"
+          7z x make-$($env:GMAKE_VERSION)-bin.zip -oC:/dev/Gmake
+          curl.exe -OL https://downloads.sourceforge.net/project/gnuwin32/make/$($env:GMAKE_VERSION)/make-$($env:GMAKE_VERSION)-dep.zip
+          7z x make-$($env:GMAKE_VERSION)-dep.zip -oC:/dev/Gmake
+          echo "C:\dev\Gmake\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          python winbuild.py builddeps -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - name: Download
+        run: |
+          python winbuild.py downloadpy -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - name: Assemble Deps
+        run: |
+          python winbuild.py assembledeps -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: deps-${{ matrix.bitness }}-${{ matrix.python-version }}
+          path: deps/*.zip
+
+      - name: Copy CheckOut
+        shell: bash
+        run: |
+          cp -r $GITHUB_WORKSPACE 'c:/dev'
+
+      - name: Build Wheels
+        continue-on-error: true
+        run: |
+          python winbuild.py -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - name: Assemble Wheels
+        continue-on-error: true
+        run: |
+          python winbuild.py assemble -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - name: Test Wheels
+        continue-on-error: true
+        run: |
+          python winbuild.py test -b ${{ matrix.bitness }} -p ${{ matrix.python-version }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist-${{ matrix.bitness }}-${{ matrix.python-version }}
+          path: dist/*

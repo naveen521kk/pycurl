@@ -12,10 +12,9 @@ class PycurlBuilder(Builder):
 
     @property
     def python_path(self):
-        if self.bconf.build_wheels:
-            python_path = os.path.join(self.bconf.archives_path, 'venv-%s-%s' % (self.python_release, self.bconf.bitness), 'scripts', 'python')
-        else:
-            python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path
+        python_path = PythonBinary(self.python_release, self.bconf.bitness).executable_path(self.bconf)
+        if not os.path.exists(python_path):
+            raise Exception(f"{python_path} doesn't exists.")
         return python_path
 
     @property
@@ -40,6 +39,8 @@ class PycurlBuilder(Builder):
                 for dll_path in dll_paths:
                     shutil.copy(dll_path, dest_lib_path)
             with self.execute_batch() as b:
+                b.add("%s -m ensurepip"% (self.python_path,))
+                b.add("%s -m pip install setuptools wheel"% (self.python_path,))
                 b.add("%s setup.py docstrings" % (self.python_path,))
                 if self.use_dlls:
                     libcurl_arg = '--use-libcurl-dll'

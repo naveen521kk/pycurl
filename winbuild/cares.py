@@ -3,6 +3,8 @@ from .builder import *
 
 class CaresBuilder(StandardBuilder):
     def build(self):
+        if not self.whether_to_build():
+            return
         cares_dir = self.standard_fetch_extract(
             'http://c-ares.haxx.se/download/c-ares-%(my_version)s.tar.gz')
         if self.bconf.cares_version == '1.12.0':

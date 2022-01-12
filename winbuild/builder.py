@@ -129,7 +129,12 @@ class StandardBuilder(Builder):
     @property
     def output_dir_path(self):
         return '%s-%s-%s' % (self.builder_name, self.my_version, self.bconf.vc_tag)
-        
+
+    def whether_to_build(self):
+        if os.path.exists(self.output_dir_path):
+            return False
+        return True   
+
     def standard_fetch_extract(self, url_template):
         url = url_template % dict(
             my_version=self.my_version,
