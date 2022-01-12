@@ -31,6 +31,9 @@ class LibcurlBuilder(StandardBuilder):
             with self.execute_batch() as b:
                 b.add("patch -p1 < %s" %
                     require_file_exists(os.path.join(self.bconf.winbuild_patch_root, 'libcurl-fix-zlib-references.patch')))
+                # https://github.com/curl/curl/discussions/8068
+                b.add("patch -p1 < %s" %
+                    require_file_exists(os.path.join(self.bconf.winbuild_patch_root, 'curl-cares-static-libs.patch')))
                 if self.use_dlls:
                     dll_or_static = 'dll'
                 else:
