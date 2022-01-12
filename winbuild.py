@@ -63,7 +63,7 @@ class Config:
     # which versions of python to build against
     #python_versions = ['2.7.10', '3.2.5', '3.3.5', '3.4.3', '3.5.4', '3.6.2']
     # these require only vc9 and vc14
-    python_versions = ['3.6.8', '3.7.9', '3.8.10', '3.9.6']
+    python_versions = ['3.7.12', '3.8.12', '3.9.7']
     # where pythons are installed
     python_path_template = 'c:/python/%(bitness)s/python%(python_release)s/tools/python.exe'
     # overrides only, defaults are given in default_vc_paths below
@@ -82,20 +82,20 @@ class Config:
     # whether to use openssl instead of winssl
     use_openssl = True
     # which version of openssl to use, will be downloaded from internet
-    openssl_version = '1.1.1k'
+    openssl_version = '1.1.1m'
     # whether to use c-ares
     use_cares = True
-    cares_version = '1.15.0'
+    cares_version = '1.18.1'
     # whether to use libssh2
     use_libssh2 = True
-    libssh2_version = '1.9.0'
+    libssh2_version = '1.10.0'
     use_nghttp2 = True
-    nghttp2_version = '1.40.0'
+    nghttp2_version = '1.46.0'
     use_libidn = False
     libiconv_version = '1.16'
-    libidn_version = '1.35'
+    libidn_version = '1.38'
     # which version of libcurl to use, will be downloaded from internet
-    libcurl_version = '7.68.0'
+    libcurl_version = '7.81.0'
     # whether to build binary wheels
     build_wheels = True
     # pycurl version to build, we should know this ourselves

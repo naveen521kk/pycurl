@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6.8, 3.7.9, 3.8.10]
+        python-version: [3.7.9, 3.8.10, 3.9.7]
         bitness: [32, 64]
     env:
       NASM_VERSION: 2.15.05
@@ -91,3 +91,4 @@ jobs:
         with:
           name: dist-${{ matrix.bitness }}-${{ matrix.python-version }}
           path: dist/*
+
