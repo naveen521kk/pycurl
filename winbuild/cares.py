@@ -7,18 +7,10 @@ class CaresBuilder(StandardBuilder):
             return
         cares_dir = self.standard_fetch_extract(
             'http://c-ares.haxx.se/download/c-ares-%(my_version)s.tar.gz')
-        if self.bconf.cares_version == '1.12.0':
-            # msvc_ver.inc is missing in c-ares-1.12.0.tar.gz
-            # https://github.com/c-ares/c-ares/issues/69
-            fetch('https://raw.githubusercontent.com/c-ares/c-ares/cares-1_12_0/msvc_ver.inc',
-                  archive='cares-1.12.0/msvc_ver.inc')
         with in_dir(cares_dir):
             with self.execute_batch() as b:
-                if self.bconf.cares_version == '1.10.0':
-                    b.add("patch -p1 < %s" %
-                        require_file_exists(os.path.join(config.winbuild_patch_root, 'c-ares-vs2015.patch')))
-                b.add("nmake -f Makefile.msvc")
-                
+                b.add("nmake -f Makefile.msvc CFG=lib-release ALL")
+
                 # assemble dist
                 b.add('mkdir dist dist\\include dist\\lib')
                 if self.bconf.cares_version_tuple < (1, 14, 0):
@@ -26,4 +18,5 @@ class CaresBuilder(StandardBuilder):
                 else:
                     subdir = 'msvc'
                 b.add('cp %s/cares/lib-release/*.lib dist/lib' % subdir)
-                b.add('cp *.h dist/include')
+                b.add('cp include/*.h dist/include')
+
